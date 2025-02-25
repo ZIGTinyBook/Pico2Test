@@ -1,97 +1,78 @@
-#include <stdint.h>
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
+#include "hardware/spi.h"
 #include "pico/time.h"
 
-extern void    setLogFunction(void (*log_function)(uint8_t *string));
-extern void    predict(float* input, uint32_t* input_shape, uint32_t shape_len, float** result);
+#define SPI_PORT spi0
 
-static void log_fn(uint8_t *string) {
-    printf("%s\n", string);
-}
+// Default pins for SPI0 on the Pico when using it in slave mode:
+static const uint CS_PIN   = 17; // SPI0 CSn
+static const uint SCK_PIN  = 18; // SPI0 SCK
+static const uint MOSI_PIN = 19; // SPI0 MOSI
+static const uint MISO_PIN = 16; // SPI0 MISO
 
 int main() {
+    // Initialize I/O for USB serial
     stdio_init_all();
-    sleep_ms(7000);  // Wait for USB CDC
+    // Give time to connect USB
+    sleep_ms(5000);
     
-    printf("\nMNIST Prediction Demo\n");
-    
-    // Set up logging
-    setLogFunction(log_fn);
-    
-    // Initialize LED
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-    
-    // Create a mock MNIST input (28x28 grayscale image)
-    float input_data[784] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};;  // Initialize all to black (0)
-    
-    // Draw a "0" pattern
-    // Top and bottom horizontal lines
-    // for(int x = 8; x < 20; x++) {
-    //     input_data[8 * 28 + x] = 100.0f;  // Top line
-    //     input_data[20 * 28 + x] = 100.0f; // Bottom line
-    // }
-    
-    // // Left and right vertical lines
-    // for(int y = 8; y < 21; y++) {
-    //     input_data[y * 28 + 8] = 100.0f;  // Left line
-    //     input_data[y * 28 + 19] = 100.0f; // Right line
-    // }
-    
-    // Set up input shape (NCHW format)
-    uint32_t input_shape[] = {1, 1, 28, 28};
-    float* result;
-    
-    while(true) {
-        gpio_put(LED_PIN, 1);
-        printf("\n\n=== Running new prediction ===\n");
-        
-        // Print the input image
-        printf("\nInput image (28x28):\n");
-        for(int i = 0; i < 28; i++) {
-            for(int j = 0; j < 28; j++) {
-                printf("%c", input_data[i * 28 + j] > 0.5f ? '#' : '.');
-            }
-            printf("\n");
-        }
-        
-        // Measure prediction time
-        absolute_time_t start_time = get_absolute_time();
-        predict(input_data, input_shape, 4, &result);
-        absolute_time_t end_time = get_absolute_time();
-        int64_t diff_us = absolute_time_diff_us(start_time, end_time);
-        
-        // Print timing and predictions
-        printf("\nPrediction took %lld microseconds\n", diff_us);
-        printf("\nMNIST Prediction probabilities:\n");
-        
-        // Calculate sum and find max probability
-        float sum = 0.0f;
-        float max_prob = result[0];
-        int predicted_digit = 0;
-        
-        for(int i = 0; i < 10; i++) {
-            printf("Digit %d: %.6f\n", i, result[i]);
-            sum += result[i];
+    printf("\n=== Raspberry Pi Pico SPI Slave Demo ===\n");
+    printf("Waiting for SPI master to send 16-bit samples...\n");
+    printf("Connect SCK->GPIO18, MOSI->GPIO19, MISO->GPIO16, CS->GPIO17, GND->GND.\n");
+
+    // =============== SPI Slave Configuration ===============
+    // Initialize SPI0 at 0 Hz (the master will control the clock speed).
+    spi_init(SPI_PORT, 0);
+
+    // Set the pins to the SPI function
+    gpio_set_function(MISO_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(MOSI_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(SCK_PIN,  GPIO_FUNC_SPI);
+    gpio_set_function(CS_PIN,   GPIO_FUNC_SPI);
+
+    // Put SPI into slave mode
+    spi_set_slave(SPI_PORT, true);
+
+    // We'll use 8 bits per transfer, mode 0, MSB first
+    // The master will clock out data in the same format
+    spi_set_format(
+        SPI_PORT,
+        8,          // 8 bits
+        SPI_CPOL_0, // Clock Polarity
+        SPI_CPHA_0, // Clock Phase
+        SPI_MSB_FIRST
+    );
+
+    printf("SPI0 configured in SLAVE mode.\n");
+    printf("Now reading incoming data...\n");
+
+    // Main loop: read 2 bytes at a time (16 bits) from the FIFO
+    while (true) {
+        // We want to read a 16-bit sample, which arrives as 2 bytes
+        // We'll wait until at least 2 bytes are available in the hardware FIFO
+        if (spi_is_readable(SPI_PORT) && (spi_get_hw(SPI_PORT)->sr & SPI_SSPSR_RNE_BITS)) {
+            // First byte (high or low depends on how master sends it)
+            uint8_t byte1 = (uint8_t)spi_get_hw(SPI_PORT)->dr;
             
-            if(result[i] > max_prob) {
-                max_prob = result[i];
-                predicted_digit = i;
+            // Wait for second byte
+            while (!(spi_is_readable(SPI_PORT))) {
+                tight_loop_contents(); // spin until next byte
             }
+            uint8_t byte2 = (uint8_t)spi_get_hw(SPI_PORT)->dr;
+
+            // Reconstruct the 16-bit sample. 
+            // If your Master sends MSB first, combine them as follows:
+            int16_t sample = (int16_t)((byte1 << 8) | (byte2 & 0xFF));
+
+            // Print out the sample
+            printf("Received sample: 0x%02x\n", sample);
         }
-        
-        // Verify softmax properties
-        printf("\nProbability sum: %.6f (should be close to 1.0)\n", sum);
-        printf("Predicted digit: %d with confidence: %.2f%%\n", predicted_digit, max_prob * 100);
-        
-        gpio_put(LED_PIN, 0);
-        //sleep_ms(1000); // Wait 1 second between predictions
+        else {
+            // No data right now, do something else or just sleep
+            sleep_ms(1);
+        }
     }
-    
+
     return 0;
 }
