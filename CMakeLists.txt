@@ -27,6 +27,9 @@ add_executable(main
 )
 add_dependencies(main libneural_network)
 target_link_libraries(main "${libneural_network_a}")
+target_link_libraries(main hardware_spi)
+target_link_libraries(main hardware_dma)
+
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(main pico_stdlib)

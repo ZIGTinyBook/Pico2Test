@@ -1,0 +1,5 @@
+/home/marco/pi-pico-zant/_deps/picotool/picotool
+/home/marco/pi-pico-zant/_deps/picotool/picotoolTargets.cmake
+/home/marco/pi-pico-zant/_deps/picotool/picotoolTargets-release.cmake
+/home/marco/pi-pico-zant/_deps/picotool/picotoolConfig.cmake
+/home/marco/pi-pico-zant/_deps/picotool/picotoolConfigVersion.cmake

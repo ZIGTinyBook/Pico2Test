@@ -1,97 +1,85 @@
-#include <stdint.h>
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
+#include "hardware/spi.h"
+#include "hardware/dma.h"
 #include "pico/time.h"
 
-extern void    setLogFunction(void (*log_function)(uint8_t *string));
-extern void    predict(float* input, uint32_t* input_shape, uint32_t shape_len, float** result);
+#define SPI_PORT spi0
 
-static void log_fn(uint8_t *string) {
-    printf("%s\n", string);
+// Pin per SPI slave (verifica con il tuo setup)
+static const uint CS_PIN = 17;   // SPI0 CSn
+static const uint SCK_PIN = 18;  // SPI0 SCK
+static const uint MOSI_PIN = 19; // SPI0 MOSI
+static const uint MISO_PIN = 16; // SPI0 MISO
+
+// Buffer per la ricezione dei dati
+#define BUFFER_SIZE 2048
+uint16_t rx_buffer[BUFFER_SIZE];
+volatile uint32_t rx_count = 0;
+
+// DMA channel per la ricezione SPI
+int dma_rx;
+
+// Funzione di callback per il DMA
+void dma_handler()
+{
+    if (dma_hw->ints0 & (1 << dma_rx))
+    {
+        dma_hw->ints0 = (1 << dma_rx); // Pulisci l'interrupt
+        rx_count += BUFFER_SIZE;
+        printf("DMA completato, rx_count: %u\n", rx_count); // Debug
+        // Riavvia il DMA con la destinazione al buffer
+        dma_channel_set_write_addr(dma_rx, rx_buffer, false);
+        dma_channel_set_trans_count(dma_rx, BUFFER_SIZE, true);
+    }
 }
 
-int main() {
+int main()
+{
     stdio_init_all();
-    sleep_ms(7000);  // Wait for USB CDC
-    
-    printf("\nMNIST Prediction Demo\n");
-    
-    // Set up logging
-    setLogFunction(log_fn);
-    
-    // Initialize LED
-    const uint LED_PIN = PICO_DEFAULT_LED_PIN;
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-    
-    // Create a mock MNIST input (28x28 grayscale image)
-    float input_data[784] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};;  // Initialize all to black (0)
-    
-    // Draw a "0" pattern
-    // Top and bottom horizontal lines
-    // for(int x = 8; x < 20; x++) {
-    //     input_data[8 * 28 + x] = 100.0f;  // Top line
-    //     input_data[20 * 28 + x] = 100.0f; // Bottom line
-    // }
-    
-    // // Left and right vertical lines
-    // for(int y = 8; y < 21; y++) {
-    //     input_data[y * 28 + 8] = 100.0f;  // Left line
-    //     input_data[y * 28 + 19] = 100.0f; // Right line
-    // }
-    
-    // Set up input shape (NCHW format)
-    uint32_t input_shape[] = {1, 1, 28, 28};
-    float* result;
-    
-    while(true) {
-        gpio_put(LED_PIN, 1);
-        printf("\n\n=== Running new prediction ===\n");
-        
-        // Print the input image
-        printf("\nInput image (28x28):\n");
-        for(int i = 0; i < 28; i++) {
-            for(int j = 0; j < 28; j++) {
-                printf("%c", input_data[i * 28 + j] > 0.5f ? '#' : '.');
-            }
-            printf("\n");
-        }
-        
-        // Measure prediction time
-        absolute_time_t start_time = get_absolute_time();
-        predict(input_data, input_shape, 4, &result);
-        absolute_time_t end_time = get_absolute_time();
-        int64_t diff_us = absolute_time_diff_us(start_time, end_time);
-        
-        // Print timing and predictions
-        printf("\nPrediction took %lld microseconds\n", diff_us);
-        printf("\nMNIST Prediction probabilities:\n");
-        
-        // Calculate sum and find max probability
-        float sum = 0.0f;
-        float max_prob = result[0];
-        int predicted_digit = 0;
-        
-        for(int i = 0; i < 10; i++) {
-            printf("Digit %d: %.6f\n", i, result[i]);
-            sum += result[i];
-            
-            if(result[i] > max_prob) {
-                max_prob = result[i];
-                predicted_digit = i;
-            }
-        }
-        
-        // Verify softmax properties
-        printf("\nProbability sum: %.6f (should be close to 1.0)\n", sum);
-        printf("Predicted digit: %d with confidence: %.2f%%\n", predicted_digit, max_prob * 100);
-        
-        gpio_put(LED_PIN, 0);
-        //sleep_ms(1000); // Wait 1 second between predictions
+    printf("Inizializzazione SPI slave\n");
+
+    // Configura i pin SPI
+    gpio_set_function(SCK_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(MOSI_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(MISO_PIN, GPIO_FUNC_SPI);
+    gpio_set_function(CS_PIN, GPIO_FUNC_SPI);
+
+    // Inizializza SPI come slave
+    spi_init(SPI_PORT, 10000000); // 10 MHz, deve corrispondere al master
+    spi_set_slave(SPI_PORT, true);
+    spi_set_format(SPI_PORT, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+
+    // Configura il canale DMA per la ricezione
+    dma_rx = dma_claim_unused_channel(true);
+    dma_channel_config c = dma_channel_get_default_config(dma_rx);
+    channel_config_set_transfer_data_size(&c, DMA_SIZE_16);
+    channel_config_set_dreq(&c, spi_get_dreq(SPI_PORT, false));
+    channel_config_set_read_increment(&c, false); // Sorgente fissa (SPI DR)
+    channel_config_set_write_increment(&c, true); // Destinazione incrementa (buffer)
+    dma_channel_configure(dma_rx, &c,
+                          rx_buffer,                 // Destinazione
+                          &spi_get_hw(SPI_PORT)->dr, // Sorgente (registro dati SPI)
+                          BUFFER_SIZE,               // Numero di trasferimenti
+                          false                      // Non avviare subito
+    );
+
+    // Imposta l'handler per l'interrupt del DMA
+    dma_channel_set_irq0_enabled(dma_rx, true);
+    irq_set_exclusive_handler(DMA_IRQ_0, dma_handler);
+    irq_set_enabled(DMA_IRQ_0, true);
+
+    // Avvia il DMA
+    dma_channel_start(dma_rx);
+
+    // Loop principale
+    while (true)
+    {
+        sleep_ms(1000);
+        printf("Campioni ricevuti nell'ultimo secondo: %u\n", rx_count);
+        printf("Primo campione: %u\n", rx_buffer[0]); // Debug
+        rx_count = 0;                                 // Resetta il contatore
     }
-    
+
     return 0;
 }
