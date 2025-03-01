@@ -70,5 +70,7 @@ CMakeFiles/main.dir/src/main.c.o: /home/marco/pi-pico-zant/src/main.c \
  /home/marco/pi-pico-zant/pico-sdk/src/rp2_common/hardware_spi/include/hardware/spi.h \
  /home/marco/pi-pico-zant/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/spi.h \
  /home/marco/pi-pico-zant/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/spi.h \
- /usr/include/newlib/stdlib.h /usr/include/newlib/machine/stdlib.h \
- /usr/include/newlib/alloca.h
+ /home/marco/pi-pico-zant/pico-sdk/src/rp2_common/hardware_dma/include/hardware/dma.h \
+ /home/marco/pi-pico-zant/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/dma.h \
+ /home/marco/pi-pico-zant/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/dma.h \
+ /home/marco/pi-pico-zant/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/dma_debug.h
