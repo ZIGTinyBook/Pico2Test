@@ -64,11 +64,13 @@ CMAKE_BINARY_DIR = /home/marco/pi-pico-zant
 
 # The main recursive "all" target.
 all: CMakeFiles/main.dir/all
+all: CMakeFiles/memory_map.dir/all
 all: pico-sdk/all
 .PHONY : all
 
 # The main recursive "codegen" target.
 codegen: CMakeFiles/main.dir/codegen
+codegen: CMakeFiles/memory_map.dir/codegen
 codegen: pico-sdk/codegen
 .PHONY : codegen
 
@@ -79,6 +81,7 @@ preinstall: pico-sdk/preinstall
 # The main recursive "clean" target.
 clean: CMakeFiles/libneural_network.dir/clean
 clean: CMakeFiles/main.dir/clean
+clean: CMakeFiles/memory_map.dir/clean
 clean: pico-sdk/clean
 .PHONY : clean
 
@@ -2426,6 +2429,37 @@ CMakeFiles/main.dir/codegen: CMakeFiles/libneural_network.dir/all
 CMakeFiles/main.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/main.dir/build.make CMakeFiles/main.dir/clean
 .PHONY : CMakeFiles/main.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/memory_map.dir
+
+# All Build rule for target.
+CMakeFiles/memory_map.dir/all: CMakeFiles/main.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/memory_map.dir/build.make CMakeFiles/memory_map.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/memory_map.dir/build.make CMakeFiles/memory_map.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/marco/pi-pico-zant/CMakeFiles --progress-num= "Built target memory_map"
+.PHONY : CMakeFiles/memory_map.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/memory_map.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/marco/pi-pico-zant/CMakeFiles 88
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/memory_map.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/marco/pi-pico-zant/CMakeFiles 0
+.PHONY : CMakeFiles/memory_map.dir/rule
+
+# Convenience name for target.
+memory_map: CMakeFiles/memory_map.dir/rule
+.PHONY : memory_map
+
+# codegen rule for target.
+CMakeFiles/memory_map.dir/codegen: CMakeFiles/main.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/memory_map.dir/build.make CMakeFiles/memory_map.dir/codegen
+.PHONY : CMakeFiles/memory_map.dir/codegen
+
+# clean rule for target.
+CMakeFiles/memory_map.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/memory_map.dir/build.make CMakeFiles/memory_map.dir/clean
+.PHONY : CMakeFiles/memory_map.dir/clean
 
 #=============================================================================
 # Target rules for target pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default.dir

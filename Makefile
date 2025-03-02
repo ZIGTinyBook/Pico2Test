@@ -143,6 +143,19 @@ main/fast:
 .PHONY : main/fast
 
 #=============================================================================
+# Target rules for targets named memory_map
+
+# Build rule for target.
+memory_map: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 memory_map
+.PHONY : memory_map
+
+# fast build rule for target.
+memory_map/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/memory_map.dir/build.make CMakeFiles/memory_map.dir/build
+.PHONY : memory_map/fast
+
+#=============================================================================
 # Target rules for targets named bs2_default
 
 # Build rule for target.
@@ -2018,6 +2031,7 @@ help:
 	@echo "... bs2_default_bin"
 	@echo "... cyw43_driver_picow_cyw43_bus_pio_spi_pio_h"
 	@echo "... libneural_network"
+	@echo "... memory_map"
 	@echo "... pioasmBuild"
 	@echo "... bs2_default"
 	@echo "... bs2_default_library"

@@ -1,5 +1,6 @@
 /home/marco/pi-pico-zant/CMakeFiles/libneural_network.dir
 /home/marco/pi-pico-zant/CMakeFiles/main.dir
+/home/marco/pi-pico-zant/CMakeFiles/memory_map.dir
 /home/marco/pi-pico-zant/CMakeFiles/edit_cache.dir
 /home/marco/pi-pico-zant/CMakeFiles/rebuild_cache.dir
 /home/marco/pi-pico-zant/pico-sdk/CMakeFiles/edit_cache.dir
