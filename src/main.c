@@ -20,7 +20,7 @@ int main()
     stdio_init_all();
     sleep_ms(1000); // Wait for USB CDC
 
-    printf("\nMNIST Prediction Demo\n");
+    printf("\nMNIST Prediction Demo 1.0\n");
 
     // Set up logging
     setLogFunction(log_fn);
@@ -57,10 +57,10 @@ int main()
     {
         
         gpio_put(LED_PIN, 1);
-        printf("\n\n=== Running new prediction ===\n");
+        printf("\n\n=== Let me guess your handwritten digit ===\n");
 
         // Wait for input
-        printf("\nWaiting for input...\n");
+        printf("Let me cook your input...\n");
 
         int scanned_count = 0;
         while (scanned_count < DATA_SIZE)
@@ -90,20 +90,11 @@ int main()
         absolute_time_t end_time = get_absolute_time();
         int64_t diff_us = absolute_time_diff_us(start_time, end_time);
 
-        // Print timing and predictions
-        printf("\nPrediction took %lld microseconds\n", diff_us);
-        printf("\nMNIST Prediction probabilities:\n");
-
-        // Calculate sum and find max probability
-        float sum = 0.0f;
         float max_prob = result[0];
         int predicted_digit = 0;
 
         for (int i = 0; i < 10; i++)
         {
-            printf("Digit %d: %.6f\n", i, result[i]);
-            sum += result[i];
-
             if (result[i] > max_prob)
             {
                 max_prob = result[i];
@@ -111,9 +102,13 @@ int main()
             }
         }
 
-        // Verify softmax properties
-        printf("\nProbability sum: %.6f (should be close to 1.0)\n", sum);
-        printf("Predicted digit: %d with confidence: %.2f%%. So confident man!\n", predicted_digit, max_prob * 100);
+        // Print timing and predictions
+        printf("\n=== Stats ===\n");
+        printf("\nPrediction took %lld microseconds\n", diff_us);
+        printf("\n=== Prediction ===\n");
+        printf("Mhhhh let me guess....\nthat's a \n\n %d \n\n right?.\n", predicted_digit);
+        printf("Nah no guessing is needed I know for sure this is the right answer.\n");
+        printf("I'm always right.\n");
 
         gpio_put(LED_PIN, 0);
     }
